@@ -106,6 +106,7 @@ use std::collections::BTreeMap;
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::io::ErrorKind;
+use std::num::NonZeroU32;
 use std::path::Path;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -408,6 +409,9 @@ pub struct Config {
 
     /// Token usage threshold triggering auto-compaction of conversation history.
     pub model_auto_compact_token_limit: Option<i64>,
+
+    /// Maximum number of model sampling turns before stopping the current user turn.
+    pub max_turns: Option<NonZeroU32>,
 
     /// Key into the model_providers map that specifies which provider to use.
     pub model_provider_id: String,
@@ -1873,6 +1877,7 @@ pub struct ConfigOverrides {
     pub show_raw_agent_reasoning: Option<bool>,
     pub tools_web_search_request: Option<bool>,
     pub ephemeral: Option<bool>,
+    pub max_turns: Option<NonZeroU32>,
     /// Additional directories that should be treated as writable roots for this session.
     pub additional_writable_roots: Vec<PathBuf>,
 }
@@ -2148,6 +2153,7 @@ impl Config {
             show_raw_agent_reasoning,
             tools_web_search_request: override_tools_web_search_request,
             ephemeral,
+            max_turns,
             additional_writable_roots,
         } = overrides;
 
@@ -2978,6 +2984,7 @@ impl Config {
             review_model,
             model_context_window: cfg.model_context_window,
             model_auto_compact_token_limit: cfg.model_auto_compact_token_limit,
+            max_turns: max_turns.or(cfg.max_turns),
             model_provider_id,
             model_provider,
             cwd: resolved_cwd,

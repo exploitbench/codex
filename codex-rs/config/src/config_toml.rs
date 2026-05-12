@@ -2,6 +2,7 @@
 
 use std::collections::BTreeMap;
 use std::collections::HashMap;
+use std::num::NonZeroU32;
 use std::path::Path;
 
 use crate::HooksToml;
@@ -103,6 +104,9 @@ pub struct ConfigToml {
 
     /// Token usage threshold triggering auto-compaction of conversation history.
     pub model_auto_compact_token_limit: Option<i64>,
+
+    /// Maximum number of model sampling turns before stopping the current user turn.
+    pub max_turns: Option<NonZeroU32>,
 
     /// Default approval policy for executing commands.
     pub approval_policy: Option<AskForApproval>,
