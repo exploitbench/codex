@@ -282,6 +282,24 @@ pub async fn apply_patch(
     fs: &dyn ExecutorFileSystem,
     sandbox: Option<&FileSystemSandboxContext>,
 ) -> Result<AppliedPatchDelta, ApplyPatchFailure> {
+    // Host-controlled kill switch: when CODEX_DISABLE_APPLY_PATCH is set
+    // in the environment, refuse the patch before any filesystem write
+    // is attempted. Routed through the same failure path used for parse
+    // errors so callers (including the freeform ApplyPatchHandler) emit
+    // the rejection back to the model with a normal tool error.
+    if std::env::var_os("CODEX_DISABLE_APPLY_PATCH").is_some() {
+        let _ = writeln!(
+            stderr,
+            "apply_patch disabled by host (CODEX_DISABLE_APPLY_PATCH)"
+        );
+        return Err(ApplyPatchFailure::without_delta(
+            ApplyPatchError::ComputeReplacements(
+                "apply_patch disabled by host (CODEX_DISABLE_APPLY_PATCH)"
+                    .to_string(),
+            ),
+        ));
+    }
+
     let hunks = match parse_patch(patch) {
         Ok(source) => source.hunks,
         Err(e) => {
