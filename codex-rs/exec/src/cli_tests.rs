@@ -72,6 +72,21 @@ fn parses_config_isolation_flags() {
 }
 
 #[test]
+fn parses_max_turns() {
+    let cli = Cli::parse_from(["codex-exec", "--max-turns", "3", "summarize"]);
+
+    assert_eq!(cli.max_turns.map(std::num::NonZero::get), Some(3));
+}
+
+#[test]
+fn rejects_zero_max_turns() {
+    let err = Cli::try_parse_from(["codex-exec", "--max-turns", "0", "summarize"])
+        .expect_err("zero max turns should be rejected");
+
+    assert_eq!(err.kind(), clap::error::ErrorKind::ValueValidation);
+}
+
+#[test]
 fn removed_full_auto_flag_reports_migration_path() {
     let cli = Cli::parse_from(["codex-exec", "--full-auto", "summarize"]);
 

@@ -247,6 +247,7 @@ pub async fn run_main(cli: Cli, arg0_paths: Arg0DispatchPaths) -> anyhow::Result
         ephemeral,
         ignore_user_config,
         ignore_rules,
+        max_turns,
         removed_full_auto,
         color,
         last_message_file,
@@ -422,6 +423,7 @@ pub async fn run_main(cli: Cli, arg0_paths: Arg0DispatchPaths) -> anyhow::Result
         show_raw_agent_reasoning: oss.then_some(true),
         tools_web_search_request: None,
         ephemeral: ephemeral.then_some(true),
+        max_turns,
         additional_writable_roots: add_dir,
     };
 
@@ -1029,10 +1031,17 @@ fn sandbox_mode_from_permission_profile(
 }
 
 fn config_request_overrides_from_config(config: &Config) -> Option<HashMap<String, Value>> {
-    config
-        .active_profile
-        .as_ref()
-        .map(|profile| HashMap::from([("profile".to_string(), Value::String(profile.clone()))]))
+    let mut overrides = HashMap::new();
+    if let Some(profile) = config.active_profile.as_ref() {
+        overrides.insert("profile".to_string(), Value::String(profile.clone()));
+    }
+    if let Some(max_turns) = config.max_turns {
+        overrides.insert(
+            "max_turns".to_string(),
+            Value::Number(serde_json::Number::from(max_turns.get())),
+        );
+    }
+    (!overrides.is_empty()).then_some(overrides)
 }
 
 fn approvals_reviewer_override_from_config(

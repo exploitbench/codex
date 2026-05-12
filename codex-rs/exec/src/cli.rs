@@ -4,6 +4,7 @@ use clap::Parser;
 use clap::ValueEnum;
 use codex_utils_cli::CliConfigOverrides;
 use codex_utils_cli::SharedCliOptions;
+use std::num::NonZeroU32;
 use std::path::PathBuf;
 
 #[derive(Parser, Debug)]
@@ -34,6 +35,10 @@ pub struct Cli {
     /// Do not load user or project execpolicy `.rules` files.
     #[arg(long = "ignore-rules", global = true, default_value_t = false)]
     pub ignore_rules: bool,
+
+    /// Maximum number of model turns to run before stopping.
+    #[arg(long = "max-turns", global = true, value_name = "N")]
+    pub max_turns: Option<NonZeroU32>,
 
     /// Legacy compatibility trap for the removed `--full-auto` flag.
     #[arg(

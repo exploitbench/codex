@@ -379,6 +379,7 @@ pub(crate) async fn run_turn(
     // 1. At the start of a turn, so the fresh user prompt in `input` gets sampled first.
     // 2. After auto-compact, when model/tool continuation needs to resume before any steer.
     let mut can_drain_pending_input = input.is_empty();
+    let mut model_turn_count = 0_u32;
 
     loop {
         if run_pending_session_start_hooks(&sess, &turn_context).await {
@@ -450,6 +451,21 @@ pub(crate) async fn run_turn(
             .map(|user_message| user_message.message())
             .collect::<Vec<String>>();
         let turn_metadata_header = turn_context.turn_metadata_state.current_header_value();
+        if let Some(max_turns) = turn_context.max_turns
+            && model_turn_count >= max_turns.get()
+        {
+            let message = format!("Maximum turn limit reached ({max_turns}).");
+            sess.send_event(
+                &turn_context,
+                EventMsg::Error(ErrorEvent {
+                    message,
+                    codex_error_info: None,
+                }),
+            )
+            .await;
+            break;
+        }
+        model_turn_count += 1;
         match run_sampling_request(
             Arc::clone(&sess),
             Arc::clone(&turn_context),
